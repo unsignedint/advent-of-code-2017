@@ -47,22 +47,36 @@ let string_of_direction = function
   | East -> "east"
 
 let part_2 v =
-  let rec aux m n dir =
-    print_endline ("moving: " ^ (string_of_direction dir) ^ " step: " ^ (string_of_int n)) ;
+  let rec aux board m n dir x y z =
+    print_endline ("move: " ^ (string_of_direction dir) ^ " step: " ^ (string_of_int n)
+                   ^ " x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " z: " ^ (string_of_int z)) ;
+    let board = Board.add {x=x; y=y} z board in
     if m = v then
-      5
-    else if n < m then
-      aux m (n + 1) dir
+      board
     else
-      (* change direction *)
-      match dir with
-        | East -> aux m 1 North
-        | North -> aux (m + 1) 1 West
-        | West -> aux m 1 South
-        | South -> aux (m + 1) 1 East
+      if n < m then
+        (* continue in the same direction *)
+        let xx, yy = match dir with
+          | East -> x+1, y
+          | North -> x, y+1
+          | West -> x-1, y
+          | South -> x, y-1 in
+        aux board m (n + 1) dir xx yy (z+1)
+      else
+        (* change direction *)
+        match dir with
+          | East -> aux board m 1 North x (y+1) (z+1)
+          | North -> aux board (m + 1) 1 West (x-1) y (z+1)
+          | West -> aux board m 1 South x (y-1) (z+1)
+          | South -> aux board (m + 1) 1 East (x+1) y (z+1)
   in
-  aux 1 1 East
+  aux Board.empty 1 0 East 0 0 1
+
+let print_piece k v =
+  print_endline ("x=" ^ (string_of_int k.x) ^ ";" ^ "y=" ^ (string_of_int k.y) ^ " " ^ (string_of_int v))
 
 let () =
   print_endline ("part 1: " ^ (string_of_int (part_1 part_1_input))) ;
-  print_endline ("part 2: " ^ (string_of_int (part_2 part_2_input))) ;
+  let board = part_2 part_2_input in
+  Board.iter print_piece board ;
+  (* print_endline ("part 2: " ^ (string_of_int (part_2 part_2_input))) ; *)
