@@ -4,7 +4,7 @@ open Printf
 open ExtString
 
 let part_1_input = 20
-let part_2_input = 5
+let part_2_input = 277678
 
 let part_1 v =
   let width = float_of_int v |> sqrt |> ceil |> int_of_float in
@@ -36,7 +36,9 @@ let fold_neighbors board cell ~f ~init =
       with Not_found -> acc)
     init
 
-let the_board = Board.empty
+let calculate_value_of_neighbours board cell z =
+  if z = 1 then 1
+  else fold_neighbors board cell ~init:0 ~f:(fun count nb -> count + nb)
 
 type direction = North | West | South | East
 
@@ -48,11 +50,13 @@ let string_of_direction = function
 
 let part_2 v =
   let rec aux board m n dir x y z =
-    print_endline ("move: " ^ (string_of_direction dir) ^ " step: " ^ (string_of_int n)
-                   ^ " x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " z: " ^ (string_of_int z)) ;
-    let board = Board.add {x=x; y=y} z board in
-    if m = v then
-      board
+    (* print_endline ("move: " ^ (string_of_direction dir) ^ " step: " ^ (string_of_int n)
+                   ^ " x: " ^ (string_of_int x) ^ " y: " ^ (string_of_int y) ^ " z: " ^ (string_of_int z)) ; *)
+    let cell = {x=x; y=y} in
+    let new_piece_value = calculate_value_of_neighbours board cell z in
+    let board = Board.add {x=x; y=y} new_piece_value board in
+    if new_piece_value > v then
+      new_piece_value
     else
       if n < m then
         (* continue in the same direction *)
@@ -65,10 +69,10 @@ let part_2 v =
       else
         (* change direction *)
         match dir with
-          | East -> aux board m 1 North x (y+1) (z+1)
-          | North -> aux board (m + 1) 1 West (x-1) y (z+1)
-          | West -> aux board m 1 South x (y-1) (z+1)
-          | South -> aux board (m + 1) 1 East (x+1) y (z+1)
+          | East -> aux board m 0 North x y z
+          | North -> aux board (m + 1) 0 West x y z
+          | West -> aux board m 0 South x y z
+          | South -> aux board (m + 1) 0 East x y z
   in
   aux Board.empty 1 0 East 0 0 1
 
@@ -77,6 +81,4 @@ let print_piece k v =
 
 let () =
   print_endline ("part 1: " ^ (string_of_int (part_1 part_1_input))) ;
-  let board = part_2 part_2_input in
-  Board.iter print_piece board ;
-  (* print_endline ("part 2: " ^ (string_of_int (part_2 part_2_input))) ; *)
+  print_endline ("part 2: " ^ (string_of_int (part_2 part_2_input))) ;
