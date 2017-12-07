@@ -7,20 +7,20 @@ open ExtString
 let part_1_input = [11;11;13;7;0;15;5;5;4;4;1;1;7;1;15;11]
 
 module SL = Set.Make(struct
-  type t = int array
-  let compare = compare
+  type t = int array * int
+  let compare (a, _) (b, _) = compare a b
 end)
 
 
-let part_1 values =
+let part_1_and_2 values =
   let a = Array.of_list values in
   let mod_inc idx = (idx + 1) mod (Array.length a) in
   let rec aux moves s =
     printf "moves: %d, array: %s\n" moves (String.join "," (List.map string_of_int (Array.to_list a))) ;
-    if SL.mem a s then
-      moves
+    if SL.mem (a, 0) s then
+      moves, (snd (SL.find (a, 0) s))
     else
-      let s = SL.add (Array.copy a) s in
+      let s = SL.add ((Array.copy a), moves) s in
       (* printf "moves: %d, idx: %d, array: %s\n" moves idx (String.join "," (List.map string_of_int (Array.to_list a))) ; *)
       (* let s = SL.add a s in *)
       let max_val, max_idx, _ = Array.fold_left (fun (old_max, old_idx, curr_idx) x ->
@@ -42,8 +42,6 @@ let part_1 values =
 
 
 let () =
-  (* let raw_input = List.map String.strip (Std.input_list (open_in file)) in
-  let values = List.map int_of_string raw_input in *)
-  print_endline ("part 1: " ^ (string_of_int (part_1 part_1_input))) ;
-  (* print_endline ("part 2: " ^ (string_of_int (part_2 values))) ; *)
-  (* print_endline ("part 2: " ^ (string_of_int (part_2 raw_input))) ; *)
+  let moves, initial = part_1_and_2 part_1_input in
+  print_endline ("part 1: " ^ (string_of_int moves)) ;
+  print_endline ("part 2: " ^ (string_of_int (moves - initial))) ;
