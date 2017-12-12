@@ -15,8 +15,8 @@ let reg_get_or_zero key m =
     | Some v -> v
     | None -> 0
 
-let reg_find_max m =
-  Registers.fold (fun _ v acc -> if v > acc then v else acc) m 0
+let reg_find_max m start =
+  Registers.fold (fun _ v acc -> if v > acc then v else acc) m start
 
 let print_register k v =
   printf "%s=%d\n" k v
@@ -62,7 +62,8 @@ let process_line line =
 
 
 let process_instructions instructions =
-  let rec aux r instr =
+  let rec aux acc instr =
+    let curr_max, r = acc in
     let var, op, (cmp_var, cmp_op, cmp_val) = instr in
     let cmp_var_val = reg_get_or_zero cmp_var r in
     let var_val = reg_get_or_zero var r in
@@ -75,20 +76,21 @@ let process_instructions instructions =
       | NEq  when cmp_var_val <> cmp_val -> true
       | _ -> false in
     if do_update then
-      match op with
+      let next_r = match op with
         | Inc x -> Registers.add var (var_val + x) r
-        | Dec x -> Registers.add var (var_val - x) r
+        | Dec x -> Registers.add var (var_val - x) r in
+      reg_find_max next_r curr_max, next_r
     else
-      r
+      curr_max, r
   in
-  List.fold_left aux Registers.empty instructions
+  List.fold_left aux (0, Registers.empty) instructions
 
 
 let () =
   let raw_lines = List.map String.strip (Std.input_list (open_in file)) in
   let instructions = List.map process_line raw_lines in
   (List.iter print_instruction instructions ;
-  let registers = process_instructions instructions in
+  let max_max, registers = process_instructions instructions in
   Registers.iter print_register registers ;
-  printf "max %d\n" (reg_find_max registers)
+  printf "end_max %d, max_max %d\n" (reg_find_max registers 0) max_max
   )
