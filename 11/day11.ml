@@ -23,17 +23,19 @@ let calculate_distance x y =
   (a - b) + b
 
 
-let rec process x y = function
-  | [] -> (x, y)
+let rec process peak x y = function
+  | [] -> (peak, x, y)
   | el :: tail ->
     let xx, yy = hex_dir_to_2d_coord el in
-    process (x+xx) (y+yy) tail
+    let xx', yy' = x+xx, y+yy in
+    process (max peak (calculate_distance xx' yy')) xx' yy' tail
 
 
 let () =
   let aaa = String.strip (Std.input_file file) in
   let raw_input = Str.split (Str.regexp ",") aaa in
-  let x, y = process 0 0 raw_input in
+  let peak, x, y = process 0 0 0 raw_input in
   let ans = calculate_distance x y in
   printf "x=%d y=%d\n" x y ;
-  printf "answer=%d\n" ans
+  printf "answer=%d\n" ans ;
+  printf "peak=%d\n" peak ;
