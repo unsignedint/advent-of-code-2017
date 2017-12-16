@@ -3,7 +3,7 @@
 open Printf
 open ExtString
 
-let file = "input2.txt"
+let file = "input.txt"
 
 let re_full = Str.regexp "\\([0-9]+\\) <-> \\(.*\\)" ;;
 
@@ -34,7 +34,7 @@ let process_graph lines =
   aux Graph.empty lines
 
 
-let find_connected g root =
+let find_connected g s root =
   let rec aux el seen =
     if Seen.mem el seen then
       seen
@@ -42,12 +42,23 @@ let find_connected g root =
       let seen' = Seen.add el seen in
       let children = Graph.find el g in
       List.fold_right aux children seen' in
-  aux root Seen.empty
+  aux root s
+
+
+let rec find_groups g s num =
+  if Graph.exists (fun k v -> not (Seen.mem k s)) g = false then
+    num
+  else
+    let root, _ = Graph.filter (fun k v -> not (Seen.mem k s)) g |> Graph.choose in
+    let s' = find_connected g s root in
+    find_groups g s' (num + 1)
 
 
 let () =
   let raw_lines = List.map String.strip (Std.input_list (open_in file)) in
   let g = process_graph raw_lines in
   Graph.iter (fun k v -> printf "%d => %s\n" k (String.join "," (List.map string_of_int v))) g ;
-  let s = find_connected g 0 in
-  printf "answer = %d\n" (Seen.cardinal s)
+  let s = Seen.empty in
+  let s = find_connected g s 0 in
+  printf "part 1 answer = %d\n" (Seen.cardinal s) ;
+  printf "part 2 answer = %d\n" (find_groups g s 1) ;
