@@ -19,41 +19,24 @@ let process_line l =
 let build_network lines =
   let add_to_graph l g =
     let depth, range = process_line l in
-    Graph.add depth range g in
+    Graph.add depth ((range - 1) * 2) g in
   List.fold_right add_to_graph lines Graph.empty
 
-let update_state g i v =
-  if Graph.mem i g = false then 1, Down
-  else
-    let range = Graph.find i g in
-    let n, direction = v in
-    match direction with
-      | Down -> if n = range-1 then n-1, Up else n+1, Down
-      | Up -> if n = 0 then n+1, Down else n-1, Up
+let new_find_solution ?delay:(delay=0) g =
+  Graph.fold (fun k v acc -> if (delay + k) mod v = 0 then k :: acc else acc) g []
 
-let find_solution g =
-  let max_depth = (Graph.fold (fun k _ acc -> max k acc) g 0) + 1 in
-  let rec aux s n acc =
-    if n = max_depth then
-      acc
-    else
-      (* update position *)
-      let state' = Array.mapi (update_state g) s in
-      printf "state (%d) = %s\n" n (String.join "," (Array.to_list (Array.map (fun x -> fst x |> string_of_int) state'))) ;
-      let v, _ = Array.get state' n in
-      if v = 0 then
-        aux state' (n + 1) (n :: acc)
-      else
-        aux state' (n + 1) acc in
-  aux (Array.make max_depth (-1, Down)) 0 []
-
+let rec solve g x =
+  let sol = new_find_solution g ~delay:x in
+  if List.length sol = 0 then x, sol
+  else solve g (x + 1)
 
 let () =
   let raw_lines = List.map String.strip (Std.input_list (open_in file)) in
   let g = build_network raw_lines in
-  Graph.iter (fun k v -> printf "%d => %d\n" k v) g ;
-  let sol = find_solution g in
-  printf "solution = %s\n" (String.join "," (List.map string_of_int sol)) ;
-  (* List.iter (printf "%d,") sol ; *)
-  printf "answer = %d\n" (List.fold_left (fun acc x -> acc + x * Graph.find x g) 0 sol) ;
-
+  (* Graph.iter (fun k v -> printf "%d => %d\n" k v) g ; *)
+  let convert_to_range x = x / 2 + 1 in
+  let part_1 = new_find_solution g in
+  printf "part_1 = %s\n" (String.join "," (List.map string_of_int part_1)) ;
+  printf "part_1 answer = %d\n" (List.fold_left (fun acc x -> acc + x * (convert_to_range (Graph.find x g))) 0 part_1) ;
+  let part_2_delay, part_2 = solve g 1 in
+  printf "part_2 answer = %d\n" part_2_delay  ;
