@@ -52,6 +52,7 @@ let rec check_char count g state remaining =
         | _ -> state
       end
     | Escape -> xs in
+    (* not very DRY.. *)
     let next_g = match s with
     | Garbage -> begin
       match c with

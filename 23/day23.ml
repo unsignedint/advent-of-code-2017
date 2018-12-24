@@ -19,6 +19,13 @@ let print_instruction = function
   | Jnz (x, y) -> sprintf "jnz(%s)=>%s" x y
 
 
+let print_instruction2 i = function
+  | Set (x, n) -> sprintf "%s = %s" x n
+  | Sub (x, n) -> sprintf "%s -= %s" x n
+  | Mul (x, y) -> sprintf "%s *= %s" x y
+  | Jnz (x, y) -> sprintf "if (%s != 0) goto L%02d" x (i + (int_of_string y))
+
+
 let gen_instructions lst =
   let process instr =
     let pieces = String.split_on_char ' ' instr in
@@ -33,7 +40,7 @@ let gen_instructions lst =
 let reg_get_or_zero key m =
   match Registers.find_opt key m with
     | Some v -> v
-    | None -> 0
+    | None -> if key = "a" then 1 else 0
 
 let process_instruction instr r mul_count =
   let get_val_or_reg unk r =
@@ -53,10 +60,41 @@ let executor instructions =
       let instruction = instructions.(idx) in
       let step, r', send_count' = process_instruction instruction r mul_count in
       execute (idx + step) r' send_count'
-    with Invalid_argument _ -> idx, r, mul_count in
+    with Invalid_argument _ | Stack_overflow ->
+      printf "Abort at %d => %s\n" idx (print_instruction instructions.(idx)) ;
+      idx, r, mul_count in
   execute 0 Registers.empty 0
+
+let while_executor instructions =
+  let quit_loop = ref false in
+  (* let loop_count = ref 0 in *)
+  let idx = ref 0 in
+  let r = ref Registers.empty in
+  let mul_count = ref 0 in
+  while not !quit_loop do
+    try
+      let instruction = instructions.(!idx) in
+      let step, r', mul_count' = process_instruction instruction !r !mul_count in
+      begin
+        idx := !idx + step ;
+        r := r' ;
+        mul_count := mul_count' ;
+        (* if !loop_count > 1000000 then *)
+          (* quit_loop := true *)
+        (* else *)
+          (* loop_count := !loop_count + 1 *)
+      end
+    with Invalid_argument _ ->
+        quit_loop := true
+      | Stack_overflow ->
+        printf "Abort at %d => %s\n" !idx (print_instruction instructions.(!idx)) ;
+        quit_loop := true
+  done ;
+  !idx, !r, !mul_count
 
 let () =
   let instructions = gen_instructions test_data |> Array.of_list in
-  let _, _, mul_count = executor instructions in
-  printf "mul_count = %d\n" mul_count
+  List.iteri (fun i x -> printf "L%02d: %s\n" i (print_instruction2 i x)) (Array.to_list instructions)
+  (* let _, r, mul_count = while_executor instructions in
+  printf "mul_count = %d\n" mul_count ;
+  Registers.iter (fun k v -> printf "%s=%d\n" k v) r *)

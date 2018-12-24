@@ -26,6 +26,6 @@ let part_2 lines =
   List.fold_left (fun acc x -> if x then acc + 1 else acc) 0 (List.map valid_passphrase lines)
 
 let () =
-  let raw_input = List.map String.strip (Std.input_list (open_in file)) in
+  let raw_input = List.map String.strip (Std.input_lines file) in
   print_endline ("part 1: " ^ (string_of_int (part_1 raw_input))) ;
   print_endline ("part 2: " ^ (string_of_int (part_2 raw_input))) ;
